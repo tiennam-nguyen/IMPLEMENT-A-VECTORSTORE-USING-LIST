@@ -1,0 +1,28 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Program",
+            "type": "shell",
+            "command": "g++ -o main main.cpp VectorStore.cpp -I . -std=c++17 -fsanitize=address",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [],
+            "detail": "Build the program with AddressSanitizer"
+        },
+        {
+            "label": "Run Program",
+            "type": "shell",
+            "command": "./main.exe",  // Sửa lại ở đây, vì trên Windows cần thêm .exe
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
+            "dependsOn": "Build Program",  // Đảm bảo task này chạy sau khi build xong
+            "problemMatcher": [],
+            "detail": "Run the program to check for memory issues"
+        }
+    ]
+}
