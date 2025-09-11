@@ -5,21 +5,75 @@
 template <class T>
 ArrayList<T>::ArrayList(int initCapacity = 10) {
     // TODO
+    this->capacity = initCapacity;
+    this->data = new T [initCapacity];
+    this->count = 0;
 }
 
 template <class T>
 ArrayList<T>::ArrayList(const ArrayList<T>& other) {
     // TODO
+    this->capacity = other.capacity;
+    this->data = new T [this->capacity];
+    memmove(this->data, other.data, (this->capacity)*sizeof(T));
+    this->count = 0;
 }   
 
 template <class T>
 ArrayList<T>::~ArrayList() {
     // TODO
+    delete []data;
+}
+
+template <class T>
+ArrayList<T> &ArrayList<T>::operator=(const ArrayList<T> &other)
+{
+    // TODO: insert return statement here
+    if(this==&other) return *this;
+
+    delete []this->data;
+
+    this->capacity = other.capacity;
+    this->count=other.count;
+    this->data = new T [this->capacity];
+    for(int i=0; i<this->capacity; i++){
+        this->data[i]=other.data[i];
+    }
+    return *this;
 }
 
 // TODO: implement other methods of ArrayList
+template <class T>
+void ArrayList<T>::ensureCapacity(int cap) {
+    if(cap>this->capacity){
+        int newCapacity = this->capacity * 3/2;
+        T* newData = new T [newCapacity];
+        memmove(newData, this->data, this->count*sizeof(T));
+        this->capacity=newCapacity;
+        delete []data;
+        this->data = newData;
+    }
+}
 
+template <class T>
+void ArrayList<T>::add(T e){
+    ensureCapacity(this->count+1);
+    this->data[this->count]=e;
+    this->count++;
+}
 
+template <class T>
+void ArrayList<T>::add(int index, T e){
+    if(index<0 || index>this->count){
+        throw std::out_of_range("Index is invalid!");
+    }
+    ensureCapacity(this->count+1);
+    for(int i = this->count; i>index; i++){
+        this->data[i]=this->data[i-1];
+    }
+    this->data[index]=e;
+    this->count++;
+}
 
 // ----------------- Iterator of ArrayList Implementation -----------------
 template <class T>
