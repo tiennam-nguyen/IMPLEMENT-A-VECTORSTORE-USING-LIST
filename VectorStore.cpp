@@ -72,7 +72,64 @@ void ArrayList<T>::add(int index, T e){
         this->data[i]=this->data[i-1];
     }
     this->data[index]=e;
-    this->count++;
+    ++count;
+}
+
+template <class T>
+T ArrayList<T>::removeAt(int index){
+    if(index<0 || index>=count){
+        throw std::out_of_range("Index is invalid!");
+    }
+    T removedElement = this->data[index];
+    for(int i=index; i<count-1; i++){
+        data[i]=std::move(data[i+1]);
+    }
+    --count;
+    return removedElement;
+}
+
+template <class T>
+bool ArrayList<T>::empty() const {
+    return this->count==0;
+}
+
+template <class T>
+int ArrayList<T>::size() const {
+    return this->count;
+}
+
+template <class T>
+void ArrayList<T>::clear(){
+    delete []this->data;
+    this->capacity=10;
+    this->data = new T[this->capacity];
+    this->count=0;
+}
+
+template <class T>
+T& ArrayList<T>::get(int index){
+    if(index<0 || index>=count){
+        throw std::out_of_range("Index is invalid!");
+    }
+    return data+index;
+}
+
+template <class T>
+void ArrayList<T>::set(int index, T e){
+    if(index<0 || index>=count){
+        throw std::out_of_range("Index is invalid!");
+    }
+    this->data[index]=e;
+}
+
+template <class T>
+int ArrayList<T>::indexOf(T item) const {
+    for(int i=0; i<count; i++){
+        if(this->data[i]==item){
+            return i;
+        }
+    }
+    return -1;
 }
 
 // ----------------- Iterator of ArrayList Implementation -----------------
