@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "stdexcept": "cpp",
-        "format": "cpp"
+        "format": "cpp",
+        "sstream": "cpp"
     }
 }

@@ -124,7 +124,7 @@ void ArrayList<T>::set(int index, T e){
 
 template <class T>
 int ArrayList<T>::indexOf(T item) const {
-    for(int i=0; i<count; i++){
+    for(int i=0; i<count; ++i){
         if(this->data[i]==item){
             return i;
         }
@@ -132,15 +132,64 @@ int ArrayList<T>::indexOf(T item) const {
     return -1;
 }
 
+template <class T>
+bool ArrayList<T>::contains(T item) const{
+    for(int i=0; i<this->count; ++i){
+        if(this->data[i]==item) return true;
+    }
+    return false;
+}
+
+template <class T>
+string ArrayList<T>::toString(string (*item2str)(T&) = 0) const{
+    ostringstream result;
+    result << "[";
+
+    for(int i=0; i<count; ++i){
+        result << item2str(data[i]);
+        if(i<count-1){
+            result << ", ";
+        }
+    }
+    result << "]";
+    return result.str();
+}
+
+template <class T>
+typename ArrayList<T>::Iterator ArrayList<T>::begin(){
+    return Iterator(this, 0);
+}
+
 // ----------------- Iterator of ArrayList Implementation -----------------
 template <class T>
 ArrayList<T>::Iterator::Iterator(ArrayList<T>* pList, int index) {
     // TODO
+    if(index<0||index>=pList->count){
+        throw out_of_range("Index is invalid!");
+    }
+    cursor = index;
 }
 
 // TODO: implement other methods of ArrayList::Iterator
+template <class T>
+ArrayList<T>::Iterator& ArrayList<T>::Iterator::operator=(const Iterator& other){
+    this->cursor=other.cursor;
+    this->pList=other.pList;
+    return *this;
+}
 
+template <class T>
+T& ArrayList<T>::Iterator::operator*(){
+    if(cursor<0||cursor>=pList->count){
+        throw out_of_range("Iterator is out of range!");
+    }
+    return pList->data[cursor];
+}
 
+template <class T>
+ bool ArrayList<T>::Iterator::operator!=(const Iterator& other) const{
+    return this->pList!=other.pList || this->cursor!=other.cursor;
+ }
 
 // ----------------- SinglyLinkedList Implementation -----------------
 template <class T>
