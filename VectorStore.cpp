@@ -15,8 +15,10 @@ ArrayList<T>::ArrayList(const ArrayList<T>& other) {
     // TODO
     this->capacity = other.capacity;
     this->data = new T [this->capacity];
-    memmove(this->data, other.data, (this->capacity)*sizeof(T));
-    this->count = 0;
+    for(int i=0; i<other.count; ++i){
+        this->data[i]=other.data[i];
+    }
+    this->count = other.count;
 }   
 
 template <class T>
@@ -48,7 +50,9 @@ void ArrayList<T>::ensureCapacity(int cap) {
     if(cap>this->capacity){
         int newCapacity = this->capacity * 3/2;
         T* newData = new T [newCapacity];
-        memmove(newData, this->data, this->count*sizeof(T));
+        for(int i=0; i<this->count; ++i){
+            newData[i]=this->data[i];
+        }
         this->capacity=newCapacity;
         delete []data;
         this->data = newData;
@@ -111,7 +115,7 @@ T& ArrayList<T>::get(int index){
     if(index<0 || index>=count){
         throw std::out_of_range("Index is invalid!");
     }
-    return data+index;
+    return data[index];
 }
 
 template <class T>
@@ -160,13 +164,19 @@ typename ArrayList<T>::Iterator ArrayList<T>::begin(){
     return Iterator(this, 0);
 }
 
+template <class T>
+typename ArrayList<T>::Iterator ArrayList<T>::end(){
+    return Iterator(this, count);
+}
+
 // ----------------- Iterator of ArrayList Implementation -----------------
 template <class T>
 ArrayList<T>::Iterator::Iterator(ArrayList<T>* pList, int index) {
     // TODO
-    if(index<0||index>=pList->count){
+    if(index<0||index>pList->count){
         throw out_of_range("Index is invalid!");
     }
+    this->pList=pList;
     cursor = index;
 }
 
@@ -190,6 +200,45 @@ template <class T>
  bool ArrayList<T>::Iterator::operator!=(const Iterator& other) const{
     return this->pList!=other.pList || this->cursor!=other.cursor;
  }
+
+template <class T>
+ typename ArrayList<T>::Iterator& ArrayList<T>::Iterator::operator++(){
+    if(cursor==pList->count){
+        throw out_of_range("Iterator cannot advance past end!");
+    }
+    ++cursor;
+    return *this;
+ }
+
+template <class T>
+typename ArrayList<T>::Iterator ArrayList<T>::Iterator::operator++(int) {
+    if(cursor==pList->count){
+        throw out_of_range("Iterator cannot advance past end!");
+    }
+    Iterator temp = *this;
+    ++(*this);
+    return temp;
+}
+
+template <class T>
+typename ArrayList<T>::Iterator& ArrayList<T>::Iterator::operator--(){
+    if(cursor==0){
+        throw out_of_range("Iterator cannot move before begin!");
+    }
+    --cursor;
+    return *this;
+}
+
+template <class T>
+typename ArrayList<T>::Iterator ArrayList<T>::Iterator::operator--(int){
+    if(cursor==0){
+        throw out_of_range("Iterator cannot move before begin!");
+    }
+    Iterator temp = *this;
+    --(*this);
+    return temp;
+}
+
 
 // ----------------- SinglyLinkedList Implementation -----------------
 template <class T>
