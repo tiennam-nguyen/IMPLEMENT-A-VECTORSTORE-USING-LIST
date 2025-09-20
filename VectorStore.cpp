@@ -38,7 +38,7 @@ ArrayList<T> &ArrayList<T>::operator=(const ArrayList<T> &other)
     this->capacity = other.capacity;
     this->count=other.count;
     this->data = new T [this->capacity];
-    for(int i=0; i<this->capacity; i++){
+    for(int i=0; i<other.count; i++){
         this->data[i]=other.data[i];
     }
     return *this;
@@ -247,14 +247,14 @@ SinglyLinkedList<T>::SinglyLinkedList() : count(0) {
     this->head = new Node();
     this->tail = new Node();
     this->head->next=this->tail;
-    this->tail->next=this->head;
+    this->tail->next=nullptr;
 }   
 
 template <class T>
 SinglyLinkedList<T>::~SinglyLinkedList() {
     // TODO
     Node* current = head;
-    while (current!=NULL)
+    while (current!=nullptr)
     {
         Node* temp = current;
         current=current->next;
@@ -274,7 +274,7 @@ void SinglyLinkedList<T>::add(int index, T e){
     }
     Node* temp = new Node(e);
     Node* prev = head;
-    for(int i=-1; i<count-1; ++i){
+    for(int i=-1; i<index-1; ++i){
         prev=prev->next;
     }
     temp->next=prev->next;
@@ -297,9 +297,9 @@ T SinglyLinkedList<T>::removeAt(int index){
     Node* curr = prev->next;
     value=curr->data;
     prev->next=curr->next;
-    curr->next=NULL;
+    curr->next=nullptr;
     delete curr;
-    curr=NULL;
+    curr=nullptr;
     --count;
     return value;
 }
@@ -337,6 +337,7 @@ void SinglyLinkedList<T>::clear(){
         delete temp;
     }
     count=0;
+    this->head->next=this->tail;
 }
 
 template <class T>
@@ -385,15 +386,60 @@ string SinglyLinkedList<T>::toString(string (*item2str)(T&) = 0) const{
     return result.str();
 }
 
+template <class T>
+SinglyLinkedList<T>::Iterator SinglyLinkedList<T>::begin(){
+    return Iterator(this->head->next);
+}
+
+template <class T>
+SinglyLinkedList<T>::Iterator SinglyLinkedList<T>::end(){
+    return Iterator(this->tail->next);
+}
+
 // ----------------- Iterator of SinglyLinkedList Implementation -----------------
 template <class T>
-SinglyLinkedList<T>::Iterator::Iterator(Node* node) {
+SinglyLinkedList<T>::Iterator::Iterator(Node* node = nullptr): current(node) {
     // TODO
 }   
 
 // TODO: implement other methods of SinglyLinkedList::Iterator
+template <class T>
+typename SinglyLinkedList<T>::Iterator& SinglyLinkedList<T>::Iterator::operator=(const Iterator& other){
+    this->current=other.current;
+    return *this;
+}
 
+template <class T>
+T& SinglyLinkedList<T>::Iterator::operator*(){
+    if(current==nullptr){
+        throw out_of_range("Iterator is out of range!");
+    }
+    return this->current->data;
+}
 
+template <class T>
+bool SinglyLinkedList<T>::Iterator::operator!=(const Iterator& other) const{
+    return this->current!=other.current;
+}
+
+template <class T>
+typename SinglyLinkedList<T>::Iterator& SinglyLinkedList<T>::Iterator::operator++(){
+    if(this->current->next==nullptr){
+        throw out_of_range("Iterator cannot advance past end!");
+    }
+    this->current=this->current->next;
+    return *this;
+}
+
+template <class T>
+typename SinglyLinkedList<T>::Iterator SinglyLinkedList<T>::Iterator::operator++(int){
+    if(this->current->next==nullptr){
+        throw out_of_range("Iterator cannot advance past end!");
+    }
+    Iterator temp = *this;
+    this->current=this->current->next;
+    return temp;
+}
 
 // ----------------- VectorStore Implementation -----------------
 
