@@ -34,7 +34,7 @@ public:
     bool empty() const;
     int size() const;
     void clear();
-    T& get(int index);
+    T& get(int index) const ;
     void set(int index, T e);
     int indexOf(T item) const;
     bool contains(T item) const;
@@ -99,13 +99,15 @@ public:
     bool empty() const;
     int size() const;
     void clear();
-    T& get(int index);
+    T& get(int index) const ;
     int indexOf(T item) const;
     bool contains(T item) const;
     string toString(string (*item2str)(T&) = 0) const;
 
     Iterator begin();
     Iterator end();
+
+    void trimToSize(int newSize);
 
     // Inner class Iterator
     class Iterator {
@@ -127,6 +129,11 @@ public:
 // =====================================
 // Class VectorStore
 // =====================================
+// Define Pair struct globally so it is visible to all functions
+struct Pair {
+    int idx;
+    double value;
+};
 
 class VectorStore {
     #ifdef TESTING
@@ -175,10 +182,15 @@ public:
                       const SinglyLinkedList<float>& v2) const;
     double l2Distance(const SinglyLinkedList<float>& v1,
                       const SinglyLinkedList<float>& v2) const;
-
+    
     int findNearest(const SinglyLinkedList<float>& query, const string& metric = "cosine") const;
 
     int* topKNearest(const SinglyLinkedList<float>& query, int k, const string& metric = "cosine") const;
+
+    void recursiveMergeSort(ArrayList<Pair>& list, int low, int hi, bool descending) const ;
+
+    void merge(ArrayList<Pair>& list, int low, int mid, int hi, bool descending) const ;
 };
+
 
 #endif // VECTORSTORE_H

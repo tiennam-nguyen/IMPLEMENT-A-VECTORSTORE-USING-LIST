@@ -3,7 +3,7 @@
 // ----------------- ArrayList Implementation -----------------
 
 template <class T>
-ArrayList<T>::ArrayList(int initCapacity = 10) {
+ArrayList<T>::ArrayList(int initCapacity) {
     // TODO
     this->capacity = initCapacity;
     this->data = new T [initCapacity];
@@ -14,7 +14,7 @@ template <class T>
 ArrayList<T>::ArrayList(const ArrayList<T>& other) {
     // TODO
     this->capacity = other.capacity;
-    this->data = new T [this->capacity];
+    this->data = new T [other.capacity];
     for(int i=0; i<other.count; ++i){
         this->data[i]=other.data[i];
     }
@@ -49,6 +49,7 @@ template <class T>
 void ArrayList<T>::ensureCapacity(int cap) {
     if(cap>this->capacity){
         int newCapacity = this->capacity * 3/2;
+        if (newCapacity < cap) newCapacity = cap;
         T* newData = new T [newCapacity];
         for(int i=0; i<this->count; ++i){
             newData[i]=this->data[i];
@@ -72,7 +73,7 @@ void ArrayList<T>::add(int index, T e){
         throw std::out_of_range("Index is invalid!");
     }
     ensureCapacity(this->count+1);
-    for(int i = this->count; i>index; i++){
+    for(int i = this->count; i>index; i--){
         this->data[i]=this->data[i-1];
     }
     this->data[index]=e;
@@ -111,7 +112,7 @@ void ArrayList<T>::clear(){
 }
 
 template <class T>
-T& ArrayList<T>::get(int index){
+T& ArrayList<T>::get(int index) const {
     if(index<0 || index>=count){
         throw std::out_of_range("Index is invalid!");
     }
@@ -145,12 +146,14 @@ bool ArrayList<T>::contains(T item) const{
 }
 
 template <class T>
-string ArrayList<T>::toString(string (*item2str)(T&) = 0) const{
+string ArrayList<T>::toString(string (*item2str)(T&)) const{
     ostringstream result;
     result << "[";
-
     for(int i=0; i<count; ++i){
-        result << item2str(data[i]);
+        if(item2str)
+            result << item2str(data[i]);
+        else
+            result << data[i]; // works for int, double, float, string
         if(i<count-1){
             result << ", ";
         }
@@ -182,7 +185,7 @@ ArrayList<T>::Iterator::Iterator(ArrayList<T>* pList, int index) {
 
 // TODO: implement other methods of ArrayList::Iterator
 template <class T>
-ArrayList<T>::Iterator& ArrayList<T>::Iterator::operator=(const Iterator& other){
+typename ArrayList<T>::Iterator& ArrayList<T>::Iterator::operator=(const Iterator& other){
     this->cursor=other.cursor;
     this->pList=other.pList;
     return *this;
@@ -307,7 +310,7 @@ T SinglyLinkedList<T>::removeAt(int index){
 template <class T>
 bool SinglyLinkedList<T>::removeItem(T item){
     Node* temp = head->next;
-    for(int i=0; i<count-1; ++i){
+    for(int i=0; i<count; ++i){
         if(temp->data==item){
             removeAt(i);
             return true;
@@ -341,7 +344,7 @@ void SinglyLinkedList<T>::clear(){
 }
 
 template <class T>
-T& SinglyLinkedList<T>::get(int index){
+T& SinglyLinkedList<T>::get(int index) const {
     if(index<0||index>=count){
         throw out_of_range("Index is invalid!");
     }
@@ -373,11 +376,14 @@ bool SinglyLinkedList<T>::contains(T item) const{
 }
 
 template <class T>
-string SinglyLinkedList<T>::toString(string (*item2str)(T&) = 0) const{
+string SinglyLinkedList<T>::toString(string (*item2str)(T&)) const{
     ostringstream result;
     Node* temp = head->next;
     while(temp!=tail){
+        if(item2str)
         result << "[" << item2str(temp->data) << "]";
+        else
+        result << "[" << temp->data << "]";
         if(temp->next!=tail){
             result << "->";
         }
@@ -387,18 +393,18 @@ string SinglyLinkedList<T>::toString(string (*item2str)(T&) = 0) const{
 }
 
 template <class T>
-SinglyLinkedList<T>::Iterator SinglyLinkedList<T>::begin(){
+typename SinglyLinkedList<T>::Iterator SinglyLinkedList<T>::begin(){
     return Iterator(this->head->next);
 }
 
 template <class T>
-SinglyLinkedList<T>::Iterator SinglyLinkedList<T>::end(){
+typename SinglyLinkedList<T>::Iterator SinglyLinkedList<T>::end(){
     return Iterator(this->tail->next);
 }
 
 // ----------------- Iterator of SinglyLinkedList Implementation -----------------
 template <class T>
-SinglyLinkedList<T>::Iterator::Iterator(Node* node = nullptr): current(node) {
+SinglyLinkedList<T>::Iterator::Iterator(Node* node): current(node) {
     // TODO
 }   
 
@@ -441,18 +447,260 @@ typename SinglyLinkedList<T>::Iterator SinglyLinkedList<T>::Iterator::operator++
     return temp;
 }
 
+template <class T>
+void SinglyLinkedList<T>::trimToSize(int newSize) {
+    if(newSize<0||newSize>count) return;
+    Node* curr = head;
+    for(int i=-1; i<newSize-1; ++i){
+        curr = curr->next;
+    }
+    Node* toDel = curr->next;
+    curr->next=tail;
+    while(toDel!=tail){
+        Node* temp = toDel;
+        toDel=toDel->next;
+        delete temp;
+    }
+    count=newSize;
+}
+
+
 // ----------------- VectorStore Implementation -----------------
 
-VectorStore::VectorStore(int dimension = 512, EmbedFn embeddingFunction = nullptr) {
+VectorStore::VectorStore(int dimension, EmbedFn embeddingFunction) {
     // TODO
+    this->dimension=dimension;
+    this->embeddingFunction=embeddingFunction;
+    this->count=0;
 }
 
 VectorStore::~VectorStore() {
     // TODO
+    this->clear();
 }
 
 // TODO: implement other methods of VectorStore
 
+int  VectorStore::size() const{
+    return this->count;
+}
+
+bool VectorStore::empty() const{
+    return this->count==0;
+}
+
+void VectorStore::clear(){
+    for(int i=0; i<count; ++i){
+        VectorRecord* vec = records.get(i);
+        delete vec->vector;
+        delete vec;
+    }
+    records.clear();
+    count=0;
+}
+
+SinglyLinkedList<float>* VectorStore::preprocessing(string rawText){
+    SinglyLinkedList<float>* result = embeddingFunction(rawText);
+    if(result->size()>dimension){
+        result->trimToSize(dimension);
+    }
+    else if(result->size()<dimension){
+        int oldSize = result->size();
+        for(int i=0; i<dimension-oldSize; ++i){
+            result->add(0.0);
+        }
+    }
+    return result;
+}
+
+VectorStore::VectorRecord::VectorRecord(int id, const string& rawText, SinglyLinkedList<float>* vector)
+: id(id), rawText(rawText), rawLength(rawText.length()), vector(vector){}
+
+void VectorStore::addText(string rawText){
+    int newId = 1;
+    if(count>0){
+        newId = records.get(count-1)->id+1;
+    }
+    SinglyLinkedList<float>* vec = preprocessing(rawText);
+    VectorRecord* record = new VectorRecord(newId, rawText, vec);
+    records.add(record);
+    count++;
+}
+
+SinglyLinkedList<float>& VectorStore::getVector(int index){
+    if(index<0||index>=count) throw out_of_range("Index is invalid!");
+    return *(this->records.get(index)->vector);
+}
+
+string VectorStore::getRawText(int index) const{
+    if(index<0||index>=count) throw out_of_range("Index is invalid!");
+    return this->records.get(index)->rawText;
+}
+
+
+int VectorStore::getId(int index) const{
+    if(index<0||index>=count) throw out_of_range("Index is invalid!");
+    return this->records.get(index)->id;
+}
+
+bool VectorStore::removeAt(int index){
+    if(index<0||index>=count) throw out_of_range("Index is invalid!");
+    delete this->records.get(index)->vector;
+    delete this->records.get(index);
+    this->records.removeAt(index);
+    --count;
+    return true;
+}
+
+bool VectorStore::updateText(int index, string newRawText){
+    if(index<0||index>=count) throw out_of_range("Index is invalid!");
+    this->records.get(index)->rawText=newRawText;
+    this->records.get(index)->rawLength=newRawText.length();
+    delete this->records.get(index)->vector;
+    this->records.get(index)->vector=embeddingFunction(newRawText);
+    return true;
+}
+
+void VectorStore::setEmbeddingFunction(EmbedFn newEmbeddingFunction){
+    this->embeddingFunction=newEmbeddingFunction;
+}
+
+void VectorStore::forEach(void (*action)(SinglyLinkedList<float>&, int, string&)){
+    for(int i=0; i<count; ++i){
+        action(*(this->records.get(i)->vector), this->records.get(i)->id, this->records.get(i)->rawText);
+    }
+}
+
+double VectorStore::cosineSimilarity(const SinglyLinkedList<float>& v1,
+                            const SinglyLinkedList<float>& v2) const{
+                                double dotProduct = 0;
+                                double sumSquareA = 0;
+                                double sumSquareB = 0;
+                                for(int i=0; i<dimension; ++i){
+                                    float A = v1.get(i);
+                                    float B = v2.get(i);
+                                    dotProduct += (A * B);
+                                    sumSquareA += (A * A);
+                                    sumSquareB += (B * B);
+                                }
+                                double normA = sqrt(sumSquareA);
+                                double normB = sqrt(sumSquareB);
+                                if(normA==0||normB==0) return 0;
+                                return dotProduct/(normA*normB);
+                            }
+
+double VectorStore::l1Distance(const SinglyLinkedList<float>& v1,
+                      const SinglyLinkedList<float>& v2) const{
+                        double dist = 0;
+                        for(int i=0; i<dimension; ++i){
+                            dist += abs(v1.get(i)-v2.get(i));
+                        }
+                        return dist;
+                      }
+
+double VectorStore::l2Distance(const SinglyLinkedList<float>& v1,
+                      const SinglyLinkedList<float>& v2) const{
+                        double dist = 0;
+                        for(int i=0; i<dimension; ++i){
+                            dist += pow(v1.get(i)-v2.get(i),2);
+                        }
+                        return sqrt(dist);
+                      }
+
+int VectorStore::findNearest(const SinglyLinkedList<float>& query, const string& metric) const{
+    double smallestDistance=1e9;
+    double largestSimilarity=-1e9;
+    int idx=-1;
+    if(metric=="cosine"){
+        for(int i=0; i<count; ++i){
+        if(this->records.get(i)->vector==&query) continue;
+        double value = cosineSimilarity(query, *(this->records.get(i)->vector));
+        if(value>largestSimilarity){
+            largestSimilarity=value;
+            idx=i;
+        }
+        }
+    }
+    else if(metric=="euclidean"){
+        for(int i=0; i<count; ++i){
+        if(this->records.get(i)->vector==&query) continue;
+        double value = l2Distance(query, *(this->records.get(i)->vector));
+        if(value<smallestDistance){
+            smallestDistance=value;
+            idx=i;
+        }
+        }
+    }
+    else if(metric=="manhattan"){
+        for(int i=0; i<count; ++i){
+        if(this->records.get(i)->vector==&query) continue;
+        double value = l1Distance(query, *(this->records.get(i)->vector));
+        if(value<smallestDistance){
+            smallestDistance=value;
+            idx=i;
+        }
+        }
+    }
+    else throw invalid_metric();
+    return idx;
+}
+
+
+void VectorStore::recursiveMergeSort(ArrayList<Pair>& list, int low, int hi, bool descending) const {
+    if (low < hi) {
+        int mid = low + (hi - low) / 2;
+        recursiveMergeSort(list, low, mid, descending);
+        recursiveMergeSort(list, mid + 1, hi, descending);
+        merge(list, low, mid, hi, descending);
+    }
+}
+
+void VectorStore::merge(ArrayList<Pair>& list, int low, int mid, int hi, bool descending) const {
+    int n = hi - low + 1;
+    Pair* temp = new Pair[n];
+    for (int i = 0; i < n; ++i) {
+        temp[i] = list.get(low + i);
+    }
+    int i = 0, j = mid - low + 1, k = low;
+    while (i <= mid - low && j < n) {
+        bool cmp = descending ? (temp[i].value > temp[j].value) : (temp[i].value < temp[j].value);
+        if (cmp) {
+            list.set(k++, temp[i++]);
+        } else {
+            list.set(k++, temp[j++]);
+        }
+    }
+    while (i <= mid - low) list.set(k++, temp[i++]);
+    while (j < n) list.set(k++, temp[j++]);
+    delete[] temp;
+}
+
+int* VectorStore::topKNearest(const SinglyLinkedList<float>& query, int k, const string& metric) const{
+    if(k<=0||k>count) throw invalid_k_value();
+    ArrayList<Pair> temp(count);
+    for(int i=0; i<count; ++i){
+        if(this->records.get(i)->vector==&query) continue;
+        double val;
+        if(metric=="cosine")
+            val = cosineSimilarity(query, *this->records.get(i)->vector);
+        else if(metric=="euclidean")
+            val = l2Distance(query, *this->records.get(i)->vector);
+        else if(metric=="manhattan")
+            val = l1Distance(query, *this->records.get(i)->vector);
+        else throw invalid_metric();
+        Pair p = {i, val};
+        temp.add(p);
+}
+    //sort
+    bool descending = (metric=="cosine");
+    recursiveMergeSort(temp,0,temp.size()-1,descending);
+    
+    int* result = new int [k];
+    for(int i=0; i<k;++i){
+        result[i]=temp.get(i).idx;
+    }
+    return result;
+}
 
 // Explicit template instantiation for char, string, int, double, float, and Point
 
