@@ -48,7 +48,7 @@ ArrayList<T> &ArrayList<T>::operator=(const ArrayList<T> &other)
 template <class T>
 void ArrayList<T>::ensureCapacity(int cap) {
     if(cap>this->capacity){
-        int newCapacity = this->capacity * 3/2;
+        int newCapacity = (this->capacity * 3)/2;
         if (newCapacity < cap) newCapacity = cap;
         T* newData = new T [newCapacity];
         for(int i=0; i<this->count; ++i){
@@ -399,7 +399,7 @@ typename SinglyLinkedList<T>::Iterator SinglyLinkedList<T>::begin(){
 
 template <class T>
 typename SinglyLinkedList<T>::Iterator SinglyLinkedList<T>::end(){
-    return Iterator(this->tail->next);
+    return Iterator(this->tail);
 }
 
 // ----------------- Iterator of SinglyLinkedList Implementation -----------------
@@ -417,7 +417,7 @@ typename SinglyLinkedList<T>::Iterator& SinglyLinkedList<T>::Iterator::operator=
 
 template <class T>
 T& SinglyLinkedList<T>::Iterator::operator*(){
-    if(current==nullptr){
+    if(current==nullptr || current->next==nullptr){
         throw out_of_range("Iterator is out of range!");
     }
     return this->current->data;
@@ -430,16 +430,17 @@ bool SinglyLinkedList<T>::Iterator::operator!=(const Iterator& other) const{
 
 template <class T>
 typename SinglyLinkedList<T>::Iterator& SinglyLinkedList<T>::Iterator::operator++(){
-    if(this->current->next==nullptr){
+    if(this->current==nullptr || this->current->next==nullptr){
         throw out_of_range("Iterator cannot advance past end!");
     }
     this->current=this->current->next;
+    
     return *this;
 }
 
 template <class T>
 typename SinglyLinkedList<T>::Iterator SinglyLinkedList<T>::Iterator::operator++(int){
-    if(this->current->next==nullptr){
+    if(this->current==nullptr || this->current->next==nullptr){
         throw out_of_range("Iterator cannot advance past end!");
     }
     Iterator temp = *this;
@@ -557,7 +558,7 @@ bool VectorStore::updateText(int index, string newRawText){
     this->records.get(index)->rawText=newRawText;
     this->records.get(index)->rawLength=newRawText.length();
     delete this->records.get(index)->vector;
-    this->records.get(index)->vector=embeddingFunction(newRawText);
+    this->records.get(index)->vector=preprocessing(newRawText);
     return true;
 }
 
@@ -613,7 +614,6 @@ int VectorStore::findNearest(const SinglyLinkedList<float>& query, const string&
     int idx=-1;
     if(metric=="cosine"){
         for(int i=0; i<count; ++i){
-        if(this->records.get(i)->vector==&query) continue;
         double value = cosineSimilarity(query, *(this->records.get(i)->vector));
         if(value>largestSimilarity){
             largestSimilarity=value;
@@ -623,7 +623,6 @@ int VectorStore::findNearest(const SinglyLinkedList<float>& query, const string&
     }
     else if(metric=="euclidean"){
         for(int i=0; i<count; ++i){
-        if(this->records.get(i)->vector==&query) continue;
         double value = l2Distance(query, *(this->records.get(i)->vector));
         if(value<smallestDistance){
             smallestDistance=value;
@@ -633,7 +632,6 @@ int VectorStore::findNearest(const SinglyLinkedList<float>& query, const string&
     }
     else if(metric=="manhattan"){
         for(int i=0; i<count; ++i){
-        if(this->records.get(i)->vector==&query) continue;
         double value = l1Distance(query, *(this->records.get(i)->vector));
         if(value<smallestDistance){
             smallestDistance=value;
@@ -679,7 +677,6 @@ int* VectorStore::topKNearest(const SinglyLinkedList<float>& query, int k, const
     if(k<=0||k>count) throw invalid_k_value();
     ArrayList<Pair> temp(count);
     for(int i=0; i<count; ++i){
-        if(this->records.get(i)->vector==&query) continue;
         double val;
         if(metric=="cosine")
             val = cosineSimilarity(query, *this->records.get(i)->vector);
