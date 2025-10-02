@@ -104,8 +104,8 @@ public:
     bool contains(T item) const;
     string toString(string (*item2str)(T&) = 0) const;
 
-    Iterator begin();
-    Iterator end();
+    Iterator begin() const;
+    Iterator end() const;
 
     void trimToSize(int newSize);
 

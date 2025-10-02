@@ -393,12 +393,12 @@ string SinglyLinkedList<T>::toString(string (*item2str)(T&)) const{
 }
 
 template <class T>
-typename SinglyLinkedList<T>::Iterator SinglyLinkedList<T>::begin(){
+typename SinglyLinkedList<T>::Iterator SinglyLinkedList<T>::begin() const {
     return Iterator(this->head->next);
 }
 
 template <class T>
-typename SinglyLinkedList<T>::Iterator SinglyLinkedList<T>::end(){
+typename SinglyLinkedList<T>::Iterator SinglyLinkedList<T>::end() const {
     return Iterator(this->tail);
 }
 
@@ -502,6 +502,7 @@ void VectorStore::clear(){
 
 SinglyLinkedList<float>* VectorStore::preprocessing(string rawText){
     SinglyLinkedList<float>* result = embeddingFunction(rawText);
+    if (!result) throw std::runtime_error("Embedding function returned nullptr");
     if(result->size()>dimension){
         result->trimToSize(dimension);
     }
@@ -546,19 +547,23 @@ int VectorStore::getId(int index) const{
 
 bool VectorStore::removeAt(int index){
     if(index<0||index>=count) throw out_of_range("Index is invalid!");
-    delete this->records.get(index)->vector;
-    delete this->records.get(index);
+    VectorRecord* rec = this->records.get(index);
     this->records.removeAt(index);
+    delete rec->vector;
+    delete rec;
     --count;
     return true;
 }
 
 bool VectorStore::updateText(int index, string newRawText){
     if(index<0||index>=count) throw out_of_range("Index is invalid!");
+    SinglyLinkedList<float>* newVector = preprocessing(newRawText);
+
+    delete this->records.get(index)->vector;
+    this->records.get(index)->vector=newVector;
     this->records.get(index)->rawText=newRawText;
     this->records.get(index)->rawLength=newRawText.length();
-    delete this->records.get(index)->vector;
-    this->records.get(index)->vector=preprocessing(newRawText);
+    
     return true;
 }
 
@@ -577,12 +582,19 @@ double VectorStore::cosineSimilarity(const SinglyLinkedList<float>& v1,
                                 double dotProduct = 0;
                                 double sumSquareA = 0;
                                 double sumSquareB = 0;
+
+                                auto it1 = v1.begin();
+                                auto it2 = v2.begin();
+                                
+
                                 for(int i=0; i<dimension; ++i){
-                                    float A = v1.get(i);
-                                    float B = v2.get(i);
+                                    float A = *it1;
+                                    float B = *it2;
                                     dotProduct += (A * B);
                                     sumSquareA += (A * A);
                                     sumSquareB += (B * B);
+                                    ++it1;
+                                    ++it2;
                                 }
                                 double normA = sqrt(sumSquareA);
                                 double normB = sqrt(sumSquareB);
@@ -593,8 +605,12 @@ double VectorStore::cosineSimilarity(const SinglyLinkedList<float>& v1,
 double VectorStore::l1Distance(const SinglyLinkedList<float>& v1,
                       const SinglyLinkedList<float>& v2) const{
                         double dist = 0;
+                        auto it1 = v1.begin();
+                        auto it2 = v2.begin();
                         for(int i=0; i<dimension; ++i){
-                            dist += abs(v1.get(i)-v2.get(i));
+                            dist += std::abs(*it1 - *it2);
+                            ++it1;
+                            ++it2;
                         }
                         return dist;
                       }
@@ -602,8 +618,13 @@ double VectorStore::l1Distance(const SinglyLinkedList<float>& v1,
 double VectorStore::l2Distance(const SinglyLinkedList<float>& v1,
                       const SinglyLinkedList<float>& v2) const{
                         double dist = 0;
+                        auto it1 = v1.begin();
+                        auto it2 = v2.begin();
                         for(int i=0; i<dimension; ++i){
-                            dist += pow(v1.get(i)-v2.get(i),2);
+                            float diff = *it1-*it2;
+                            dist += diff*diff;
+                            ++it1;
+                            ++it2;
                         }
                         return sqrt(dist);
                       }
@@ -707,6 +728,7 @@ template class ArrayList<int>;
 template class ArrayList<double>;
 template class ArrayList<float>;
 template class ArrayList<Point>;
+template class ArrayList<VectorStore::VectorRecord*>;
 
 template class SinglyLinkedList<char>;
 template class SinglyLinkedList<string>;
