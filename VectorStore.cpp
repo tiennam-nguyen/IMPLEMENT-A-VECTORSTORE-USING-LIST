@@ -501,6 +501,7 @@ void VectorStore::clear(){
 }
 
 SinglyLinkedList<float>* VectorStore::preprocessing(string rawText){
+    if (!embeddingFunction) throw std::runtime_error("Embedding function is not set");
     SinglyLinkedList<float>* result = embeddingFunction(rawText);
     if (!result) throw std::runtime_error("Embedding function returned nullptr");
     if(result->size()>dimension){
@@ -683,7 +684,10 @@ void VectorStore::merge(ArrayList<Pair>& list, int low, int mid, int hi, bool de
     int i = 0, j = mid - low + 1, k = low;
     while (i <= mid - low && j < n) {
         bool cmp = descending ? (temp[i].value > temp[j].value) : (temp[i].value < temp[j].value);
-        if (cmp) {
+        // For stable sort: when values are equal, pick the one with smaller original index
+        bool equalValues = (temp[i].value == temp[j].value);
+        bool pickLeft = cmp || (equalValues && temp[i].idx <= temp[j].idx);
+        if (pickLeft) {
             list.set(k++, temp[i++]);
         } else {
             list.set(k++, temp[j++]);
