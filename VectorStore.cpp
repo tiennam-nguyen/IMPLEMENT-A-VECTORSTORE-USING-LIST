@@ -176,7 +176,7 @@ typename ArrayList<T>::Iterator ArrayList<T>::end(){
 template <class T>
 ArrayList<T>::Iterator::Iterator(ArrayList<T>* pList, int index) {
     // TODO
-    if(index<0||index>pList->count){
+    if(pList && (index<0||index>pList->count)){
         throw out_of_range("Index is invalid!");
     }
     this->pList=pList;
@@ -492,18 +492,26 @@ bool VectorStore::empty() const{
 
 void VectorStore::clear(){
     for(int i=0; i<count; ++i){
-        VectorRecord* vec = records.get(i);
-        delete vec->vector;
-        delete vec;
+        VectorRecord* rec = records.get(i);
+        delete rec->vector;
+        delete rec;
     }
     records.clear();
     count=0;
 }
 
 SinglyLinkedList<float>* VectorStore::preprocessing(string rawText){
-    if (!embeddingFunction) throw std::runtime_error("Embedding function is not set");
+    if (!embeddingFunction){
+        auto* result = new SinglyLinkedList<float>();
+        for (int i = 0; i < dimension; ++i) result->add(0.0f);
+        return result;
+    }
     SinglyLinkedList<float>* result = embeddingFunction(rawText);
-    if (!result) throw std::runtime_error("Embedding function returned nullptr");
+    if (!result){
+        auto* fallback = new SinglyLinkedList<float>();
+        for (int i = 0; i < dimension; ++i) fallback->add(0.0f);
+        return fallback;
+    }
     if(result->size()>dimension){
         result->trimToSize(dimension);
     }
@@ -733,6 +741,7 @@ template class ArrayList<double>;
 template class ArrayList<float>;
 template class ArrayList<Point>;
 template class ArrayList<VectorStore::VectorRecord*>;
+template class ArrayList<SinglyLinkedList<int>*>;
 
 template class SinglyLinkedList<char>;
 template class SinglyLinkedList<string>;
